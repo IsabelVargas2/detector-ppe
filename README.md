@@ -8,6 +8,9 @@ Aplicación web que detecta equipos de protección personal (PPE) en imágenes u
 
 ## Aplicación de Streamlit
 https://detector-ppe-tp7pcpwkm3ccoc2li6zhnl.streamlit.app
+---
+## Cuaderno Google colab
+https://colab.research.google.com/drive/1TW1KqIy_CePNP0OYGaI8C9Z53nY719ry?usp=sharing
 
 ---
 
