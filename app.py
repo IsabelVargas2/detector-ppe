@@ -4,7 +4,6 @@ from PIL import Image
 import numpy as np
 import cv2
 
-# ── Configuración de página ──────────────────────────────────────────────────
 st.set_page_config(
     page_title="PPE Vision",
     page_icon="🦺",
@@ -12,309 +11,470 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# ── CSS personalizado ────────────────────────────────────────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap');
-
-* { box-sizing: border-box; }
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
 html, body, [data-testid="stAppViewContainer"] {
-    background: #0a0a0f;
-    color: #f0f0f0;
-    font-family: 'DM Sans', sans-serif;
+    background: #0f1923;
+    color: #e2f4f4;
+    font-family: 'Plus Jakarta Sans', sans-serif;
 }
-
 [data-testid="stAppViewContainer"] {
-    background: radial-gradient(ellipse at 20% 0%, #1a1a3e 0%, #0a0a0f 60%);
+    background: linear-gradient(160deg, #0f1923 0%, #0a1f1f 100%);
 }
+[data-testid="stSidebar"] { background: #0a1515 !important; }
 
-.hero {
+/* Header */
+.app-header {
     text-align: center;
-    padding: 3rem 1rem 2rem;
+    padding: 2.5rem 0 2rem;
 }
-.hero-badge {
+.app-badge {
     display: inline-block;
-    background: linear-gradient(135deg, #ff6b35, #f7c948);
-    color: #0a0a0f;
-    font-family: 'Syne', sans-serif;
-    font-weight: 700;
+    background: rgba(32,201,191,0.12);
+    border: 1px solid rgba(32,201,191,0.3);
+    color: #20c9bf;
     font-size: 0.7rem;
-    letter-spacing: 0.2em;
-    padding: 0.3rem 1rem;
-    border-radius: 2rem;
-    margin-bottom: 1.2rem;
+    font-weight: 700;
+    letter-spacing: 0.18em;
     text-transform: uppercase;
+    padding: 0.35rem 1.1rem;
+    border-radius: 99px;
+    margin-bottom: 1.2rem;
 }
-.hero h1 {
-    font-family: 'Syne', sans-serif;
-    font-size: clamp(2.5rem, 6vw, 4.5rem);
+.app-title {
+    font-size: clamp(2.2rem, 5vw, 3.8rem);
     font-weight: 800;
-    line-height: 1.05;
-    margin: 0 0 1rem;
-    background: linear-gradient(135deg, #ffffff 0%, #a0a0c0 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    color: #e2f4f4;
+    line-height: 1.1;
+    margin-bottom: 0.8rem;
+    letter-spacing: -0.02em;
 }
-.hero p {
-    color: #888;
-    font-size: 1.05rem;
-    font-weight: 300;
-    max-width: 480px;
-    margin: 0 auto 2rem;
+.app-title span { color: #20c9bf; }
+.app-desc {
+    color: #5a8a8a;
+    font-size: 1rem;
+    font-weight: 400;
+    max-width: 440px;
+    margin: 0 auto;
     line-height: 1.7;
 }
-.card-title {
-    font-family: 'Syne', sans-serif;
-    font-size: 0.75rem;
+
+/* Section label */
+.sec-label {
+    font-size: 0.7rem;
     font-weight: 700;
     letter-spacing: 0.15em;
     text-transform: uppercase;
-    color: #ff6b35;
+    color: #20c9bf;
+    margin-bottom: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+.sec-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: rgba(32,201,191,0.15);
+}
+
+/* Cards */
+.info-card {
+    background: rgba(32,201,191,0.05);
+    border: 1px solid rgba(32,201,191,0.12);
+    border-radius: 14px;
+    padding: 1.4rem;
     margin-bottom: 1rem;
 }
+
+/* Stats row */
 .stats-row {
     display: flex;
-    gap: 1rem;
-    margin: 1.5rem 0;
+    gap: 0.8rem;
+    margin: 1rem 0;
 }
 .stat-box {
     flex: 1;
-    background: rgba(255,107,53,0.08);
-    border: 1px solid rgba(255,107,53,0.2);
-    border-radius: 12px;
+    background: rgba(32,201,191,0.07);
+    border: 1px solid rgba(32,201,191,0.15);
+    border-radius: 10px;
     padding: 1rem;
     text-align: center;
 }
-.stat-number {
-    font-family: 'Syne', sans-serif;
-    font-size: 2rem;
-    font-weight: 800;
-    color: #ff6b35;
+.stat-val {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 1.8rem;
+    font-weight: 600;
+    color: #20c9bf;
     line-height: 1;
 }
-.stat-label {
-    font-size: 0.75rem;
-    color: #666;
-    margin-top: 0.3rem;
+.stat-lbl {
+    font-size: 0.7rem;
+    color: #5a8a8a;
     text-transform: uppercase;
     letter-spacing: 0.1em;
+    margin-top: 0.25rem;
 }
-.tag {
-    display: inline-block;
-    background: rgba(247,201,72,0.12);
-    border: 1px solid rgba(247,201,72,0.3);
-    color: #f7c948;
-    font-size: 0.8rem;
+
+/* Detection cards */
+.det-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.7rem;
+    margin-top: 0.5rem;
+}
+.det-card {
+    background: rgba(32,201,191,0.06);
+    border: 1px solid rgba(32,201,191,0.12);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+}
+.det-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+.det-name {
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: #e2f4f4;
+    text-transform: capitalize;
+}
+.det-count {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    color: #20c9bf;
+    background: rgba(32,201,191,0.1);
+    padding: 0.1rem 0.5rem;
+    border-radius: 99px;
+}
+.det-bar-bg {
+    height: 3px;
+    background: rgba(32,201,191,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 0.3rem;
+}
+.det-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #20c9bf, #5efff7);
+    border-radius: 2px;
+}
+.det-conf {
+    font-size: 0.72rem;
+    color: #5a8a8a;
+}
+
+/* Model metrics */
+.model-row {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid rgba(32,201,191,0.07);
+}
+.model-row:last-child { border-bottom: none; }
+.model-emoji { font-size: 1.1rem; width: 1.8rem; }
+.model-name {
+    font-size: 0.82rem;
     font-weight: 500;
-    padding: 0.3rem 0.8rem;
-    border-radius: 2rem;
-    margin: 0.2rem;
+    color: #b0d0d0;
+    width: 5rem;
+    text-transform: capitalize;
 }
-.tag-high {
-    background: rgba(52,211,153,0.12);
-    border-color: rgba(52,211,153,0.3);
-    color: #34d399;
+.model-bar-wrap { flex: 1; }
+.model-bar-bg {
+    height: 4px;
+    background: rgba(32,201,191,0.1);
+    border-radius: 2px;
+    overflow: hidden;
 }
-.tag-low {
-    background: rgba(251,113,133,0.12);
-    border-color: rgba(251,113,133,0.3);
-    color: #fb7185;
+.model-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #20c9bf, #5efff7);
+    border-radius: 2px;
 }
-.divider {
-    border: none;
-    border-top: 1px solid rgba(255,255,255,0.06);
-    margin: 2rem 0;
+.model-pct {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #20c9bf;
+    width: 2.5rem;
+    text-align: right;
 }
+
+/* Empty state */
+.empty-box {
+    background: rgba(32,201,191,0.03);
+    border: 1px dashed rgba(32,201,191,0.15);
+    border-radius: 14px;
+    padding: 3.5rem 2rem;
+    text-align: center;
+}
+.empty-icon { font-size: 2.5rem; margin-bottom: 0.8rem; }
+.empty-txt { color: #3a6060; font-size: 0.9rem; }
+
+/* Buttons */
 .stButton > button {
-    background: linear-gradient(135deg, #ff6b35, #f7c948) !important;
-    color: #0a0a0f !important;
-    font-family: 'Syne', sans-serif !important;
+    background: linear-gradient(135deg, #20c9bf, #17a89f) !important;
+    color: #0f1923 !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
     font-weight: 700 !important;
-    font-size: 0.9rem !important;
-    letter-spacing: 0.05em !important;
+    font-size: 0.88rem !important;
     border: none !important;
     border-radius: 10px !important;
-    padding: 0.7rem 2rem !important;
+    padding: 0.65rem 1.5rem !important;
     width: 100% !important;
+    letter-spacing: 0.02em !important;
 }
+.stButton > button:hover { opacity: 0.88 !important; }
+
+/* Tabs */
 .stTabs [data-baseweb="tab-list"] {
-    background: rgba(255,255,255,0.04) !important;
+    background: rgba(32,201,191,0.06) !important;
+    border: 1px solid rgba(32,201,191,0.12) !important;
     border-radius: 10px !important;
     padding: 4px !important;
-    gap: 4px !important;
+    gap: 3px !important;
 }
 .stTabs [data-baseweb="tab"] {
     background: transparent !important;
-    color: #888 !important;
-    font-family: 'DM Sans', sans-serif !important;
+    color: #5a8a8a !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
     font-weight: 500 !important;
+    font-size: 0.85rem !important;
     border-radius: 8px !important;
 }
 .stTabs [aria-selected="true"] {
-    background: rgba(255,107,53,0.2) !important;
-    color: #ff6b35 !important;
+    background: rgba(32,201,191,0.15) !important;
+    color: #20c9bf !important;
+    font-weight: 700 !important;
 }
+
+/* Slider */
+[data-testid="stSlider"] label { color: #5a8a8a !important; font-size: 0.85rem !important; }
+
+/* File uploader */
+[data-testid="stFileUploader"] {
+    background: rgba(32,201,191,0.04) !important;
+    border: 1px dashed rgba(32,201,191,0.2) !important;
+    border-radius: 12px !important;
+}
+
+/* Divider */
+.divider { border: none; border-top: 1px solid rgba(32,201,191,0.1); margin: 1.5rem 0; }
+
 #MainMenu, footer, header { visibility: hidden; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Hero ──────────────────────────────────────────────────────────────────────
-st.markdown("""
-<div class="hero">
-    <div class="hero-badge">🦺 IA de Seguridad Industrial</div>
-    <h1>PPE Vision</h1>
-    <p>Detecta equipos de protección personal en tiempo real usando inteligencia artificial avanzada con YOLOv8</p>
-</div>
-""", unsafe_allow_html=True)
-
-# ── Cargar modelo ─────────────────────────────────────────────────────────────
+# ── Modelo ────────────────────────────────────────────────────────────────────
 @st.cache_resource
 def cargar_modelo():
     return YOLO("best.pt")
 
-with st.spinner("Iniciando motor de IA..."):
-    model = cargar_modelo()
-
+model = cargar_modelo()
 clases = model.names
 
+metricas_modelo = {
+    "helmet":   {"map50": 0.900, "emoji": "⛑️"},
+    "vest":     {"map50": 0.909, "emoji": "🦺"},
+    "boots":    {"map50": 0.859, "emoji": "👟"},
+    "person":   {"map50": 0.853, "emoji": "🧍"},
+    "glasses":  {"map50": 0.728, "emoji": "🥽"},
+    "earmuffs": {"map50": 0.612, "emoji": "🎧"},
+    "gloves":   {"map50": 0.384, "emoji": "🧤"},
+}
+
+emoji_map = {k: v["emoji"] for k, v in metricas_modelo.items()}
+
+# ── Header ────────────────────────────────────────────────────────────────────
+st.markdown("""
+<div class="app-header">
+    <div class="app-badge">🦺 IA de Seguridad Industrial</div>
+    <div class="app-title">PPE <span>Vision</span></div>
+    <div class="app-desc">Detecta equipos de protección personal en imágenes usando YOLOv8 entrenado con más de 9.000 imágenes</div>
+</div>
+""", unsafe_allow_html=True)
+
 # ── Layout ────────────────────────────────────────────────────────────────────
-col_izq, col_der = st.columns([1, 1], gap="large")
+col_izq, col_der = st.columns([1, 1.1], gap="large")
 
 with col_izq:
-    st.markdown('<div class="card-title">⚙️ Configuración</div>', unsafe_allow_html=True)
-
-    confianza = st.slider(
-        "Umbral de confianza",
-        min_value=0.1, max_value=1.0,
-        value=0.25, step=0.05
-    )
+    st.markdown('<div class="sec-label">⚙️ Configuración</div>', unsafe_allow_html=True)
+    confianza = st.slider("Umbral de confianza", 0.10, 0.95, 0.25, 0.05)
 
     st.markdown('<hr class="divider">', unsafe_allow_html=True)
-    st.markdown('<div class="card-title">📥 Fuente de imagen</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-label">📥 Fuente de imagen</div>', unsafe_allow_html=True)
 
-    tab1, tab2 = st.tabs(["📁 Subir imagen", "📷 Usar cámara"])
-
+    tab1, tab2 = st.tabs(["📁  Subir imagen", "📷  Cámara"])
     imagen_input = None
 
     with tab1:
-        archivo = st.file_uploader(
-            "Arrastra o selecciona",
-            type=["jpg", "jpeg", "png"],
-            label_visibility="collapsed"
-        )
+        archivo = st.file_uploader("Sube una imagen", type=["jpg", "jpeg", "png"], label_visibility="collapsed")
         if archivo:
             imagen_input = Image.open(archivo).convert("RGB")
 
     with tab2:
-        st.markdown("Toma una foto con tu cámara:")
-        foto = st.camera_input("", label_visibility="collapsed")
-        if foto:
-            imagen_input = Image.open(foto).convert("RGB")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("▶ Activar"):
+                st.session_state["cam_on"] = True
+        with c2:
+            if st.button("■ Apagar"):
+                st.session_state["cam_on"] = False
+
+        if st.session_state.get("cam_on", False):
+            foto = st.camera_input("", label_visibility="collapsed")
+            if foto:
+                imagen_input = Image.open(foto).convert("RGB")
+        else:
+            st.markdown("""
+            <div class="empty-box" style="padding:1.5rem;">
+                <div class="empty-icon">📷</div>
+                <div class="empty-txt">Cámara apagada</div>
+            </div>
+            """, unsafe_allow_html=True)
 
     if imagen_input:
         st.markdown('<hr class="divider">', unsafe_allow_html=True)
-        st.markdown('<div class="card-title">🖼️ Imagen original</div>', unsafe_allow_html=True)
+        st.markdown('<div class="sec-label">🖼️ Vista previa</div>', unsafe_allow_html=True)
         st.image(imagen_input, use_container_width=True)
-        detectar = st.button("🔍 Analizar con IA")
+        st.markdown('<br>', unsafe_allow_html=True)
+        analizar = st.button("🔍 Analizar imagen")
     else:
-        detectar = False
+        analizar = False
 
 with col_der:
-    st.markdown('<div class="card-title">📊 Resultados del análisis</div>', unsafe_allow_html=True)
+    st.markdown('<div class="sec-label">📊 Resultado</div>', unsafe_allow_html=True)
 
     if imagen_input is None:
         st.markdown("""
-        <div style="height:400px;display:flex;flex-direction:column;align-items:center;
-        justify-content:center;background:rgba(255,255,255,0.02);border:1px dashed
-        rgba(255,255,255,0.08);border-radius:16px;color:#444;text-align:center;padding:2rem;">
-            <div style="font-size:3rem;margin-bottom:1rem">🔍</div>
-            <div style="font-family:'Syne',sans-serif;font-size:1.1rem;color:#555">
-                Sube una imagen o activa la cámara
-            </div>
-            <div style="font-size:0.85rem;margin-top:0.5rem;color:#333">para comenzar el análisis</div>
+        <div class="empty-box">
+            <div class="empty-icon">🔍</div>
+            <div class="empty-txt">Sube una imagen o activa la cámara para comenzar</div>
+        </div>
+        """, unsafe_allow_html=True)
+    elif analizar:
+        with st.spinner("Analizando..."):
+            img_array = np.array(imagen_input)
+            resultados = model.predict(source=img_array, conf=confianza, verbose=False)
+            img_res = resultados[0].plot()
+            img_rgb = cv2.cvtColor(img_res, cv2.COLOR_BGR2RGB)
+            st.session_state["img_rgb"] = img_rgb
+            boxes = resultados[0].boxes
+            conteo = {}
+            for box in boxes:
+                cid = int(box.cls[0])
+                nombre = clases[cid]
+                conf_val = float(box.conf[0])
+                if nombre not in conteo:
+                    conteo[nombre] = {"count": 0, "confs": []}
+                conteo[nombre]["count"] += 1
+                conteo[nombre]["confs"].append(conf_val)
+            st.session_state["conteo"] = conteo
+            st.session_state["n_boxes"] = len(boxes)
+            st.session_state["conf_avg"] = sum([b.conf[0].item() for b in boxes]) / len(boxes) if boxes else 0
+
+        st.image(st.session_state["img_rgb"], use_container_width=True)
+    elif "img_rgb" in st.session_state:
+        st.image(st.session_state["img_rgb"], use_container_width=True)
+    else:
+        st.markdown("""
+        <div class="empty-box">
+            <div class="empty-icon">👈</div>
+            <div class="empty-txt">Presiona "Analizar imagen" para ver el resultado</div>
         </div>
         """, unsafe_allow_html=True)
 
-    elif detectar:
-        with st.spinner("Analizando con IA..."):
-            img_array = np.array(imagen_input)
-            resultados = model.predict(source=img_array, conf=confianza, verbose=False)
-            img_resultado = resultados[0].plot()
-            img_rgb = cv2.cvtColor(img_resultado, cv2.COLOR_BGR2RGB)
+# ── Sección de resultados abajo ───────────────────────────────────────────────
+if "conteo" in st.session_state and st.session_state["conteo"] is not None:
+    st.markdown('<hr class="divider">', unsafe_allow_html=True)
 
-        st.image(img_rgb, use_container_width=True)
+    conteo = st.session_state["conteo"]
+    n = st.session_state["n_boxes"]
+    conf_avg = st.session_state["conf_avg"]
 
-        boxes = resultados[0].boxes
-        n = len(boxes)
+    col_a, col_b = st.columns([1, 1.5], gap="large")
 
-        st.markdown('<hr class="divider">', unsafe_allow_html=True)
+    with col_a:
+        st.markdown('<div class="sec-label">🎯 Detecciones encontradas</div>', unsafe_allow_html=True)
 
         if n == 0:
-            st.warning("⚠️ No se detectó ningún equipo de protección personal")
+            st.warning("⚠️ No se detectó ningún equipo de protección.")
         else:
-            conteo = {}
-            for box in boxes:
-                clase_id = int(box.cls[0])
-                nombre = clases[clase_id]
-                conf_val = float(box.conf[0])
-                if nombre not in conteo:
-                    conteo[nombre] = []
-                conteo[nombre].append(conf_val)
-
-            conf_media = sum([b.conf[0].item() for b in boxes]) / n
-
             st.markdown(f"""
             <div class="stats-row">
                 <div class="stat-box">
-                    <div class="stat-number">{n}</div>
-                    <div class="stat-label">Detecciones</div>
+                    <div class="stat-val">{n}</div>
+                    <div class="stat-lbl">Objetos</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number">{len(conteo)}</div>
-                    <div class="stat-label">Clases</div>
+                    <div class="stat-val">{len(conteo)}</div>
+                    <div class="stat-lbl">Clases</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-number">{round(conf_media*100)}%</div>
-                    <div class="stat-label">Confianza</div>
+                    <div class="stat-val">{int(conf_avg*100)}%</div>
+                    <div class="stat-lbl">Confianza</div>
                 </div>
             </div>
             """, unsafe_allow_html=True)
 
-            st.markdown('<div class="card-title">🏷️ Objetos detectados</div>', unsafe_allow_html=True)
-
-            emoji_map = {
-                "helmet": "⛑️", "vest": "🦺", "boots": "👟",
-                "gloves": "🧤", "glasses": "🥽", "earmuffs": "🎧", "person": "🧍"
-            }
-            tags_html = ""
-            for clase, confs in conteo.items():
-                promedio = sum(confs) / len(confs)
-                tag_class = "tag-high" if promedio > 0.6 else ("tag" if promedio > 0.4 else "tag-low")
+            det_html = '<div class="det-grid">'
+            for clase, info in conteo.items():
+                promedio = sum(info["confs"]) / len(info["confs"])
                 emoji = emoji_map.get(clase, "📦")
-                tags_html += f'<span class="{tag_class}">{emoji} {clase} ×{len(confs)} — {promedio*100:.0f}%</span> '
+                det_html += f"""
+                <div class="det-card">
+                    <div class="det-top">
+                        <div class="det-name">{emoji} {clase}</div>
+                        <div class="det-count">×{info['count']}</div>
+                    </div>
+                    <div class="det-bar-bg">
+                        <div class="det-bar-fill" style="width:{int(promedio*100)}%"></div>
+                    </div>
+                    <div class="det-conf">Confianza: {int(promedio*100)}%</div>
+                </div>"""
+            det_html += "</div>"
+            st.markdown(det_html, unsafe_allow_html=True)
 
-            st.markdown(tags_html, unsafe_allow_html=True)
+    with col_b:
+        st.markdown('<div class="sec-label">📈 Rendimiento del modelo por clase</div>', unsafe_allow_html=True)
+        st.markdown('<div class="info-card">', unsafe_allow_html=True)
 
-    elif imagen_input:
-        st.markdown("""
-        <div style="height:300px;display:flex;align-items:center;justify-content:center;
-        background:rgba(255,107,53,0.04);border:1px dashed rgba(255,107,53,0.15);
-        border-radius:16px;color:#555;text-align:center;">
-            <div>
-                <div style="font-size:2rem">👈</div>
-                <div style="margin-top:0.5rem;font-family:'Syne',sans-serif;">
-                    Presiona "Analizar con IA"
+        rows = ""
+        for clase, data in metricas_modelo.items():
+            bar_w = int(data["map50"] * 100)
+            rows += f"""
+            <div class="model-row">
+                <div class="model-emoji">{data['emoji']}</div>
+                <div class="model-name">{clase}</div>
+                <div class="model-bar-wrap">
+                    <div class="model-bar-bg">
+                        <div class="model-bar-fill" style="width:{bar_w}%"></div>
+                    </div>
                 </div>
-            </div>
+                <div class="model-pct">{int(data['map50']*100)}%</div>
+            </div>"""
+
+        st.markdown(f"""
+        {rows}
+        <div style="margin-top:1rem;padding-top:0.8rem;border-top:1px solid rgba(32,201,191,0.1);
+        display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.75rem;color:#5a8a8a;">mAP50 Global · 50 épocas · YOLOv8n · GPU T4</span>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:1rem;
+            font-weight:600;color:#20c9bf;">74.9%</span>
         </div>
         """, unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
 # ── Footer ────────────────────────────────────────────────────────────────────
-st.markdown('<hr class="divider">', unsafe_allow_html=True)
 st.markdown("""
-<div style="text-align:center;color:#333;font-size:0.8rem;padding-bottom:2rem;">
-    PPE Vision · YOLOv8 · Inteligencia Artificial Avanzada · UNAB Digital
+<div style="text-align:center;color:#2a5555;font-size:0.75rem;padding:2rem 0 1rem;
+border-top:1px solid rgba(32,201,191,0.08);margin-top:2rem;">
+    PPE Vision · YOLOv8 · mAP50 74.9% · UNAB Digital · IA Avanzada
 </div>
-""", unsafe_allow_html=True)    
+""", unsafe_allow_html=True)
