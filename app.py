@@ -5,310 +5,321 @@ import numpy as np
 import cv2
 
 st.set_page_config(
-    page_title="SafeEye — Detector PPE",
-    page_icon="👁",
+    page_title="SafeEye // PPE Scanner",
+    page_icon="⬡",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;500;600;700&display=swap');
 
-/* Reset & Base */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 html, body, [data-testid="stAppViewContainer"] {
-    font-family: 'Space Grotesk', sans-serif;
-    background: #f5f0e8;
-    color: #1a1a1a;
+    background: #0d0015;
+    color: #e0d0ff;
+    font-family: 'Rajdhani', sans-serif;
 }
 
 [data-testid="stAppViewContainer"] {
-    background: #f5f0e8;
+    background: linear-gradient(135deg, #0d0015 0%, #0a0020 50%, #0d0015 100%);
 }
 
+/* Sidebar */
 [data-testid="stSidebar"] {
-    background: #1a1a1a !important;
-    border-right: none !important;
+    background: linear-gradient(180deg, #120025 0%, #0a0018 100%) !important;
+    border-right: 1px solid #9d4edd44 !important;
 }
+[data-testid="stSidebar"] * { color: #e0d0ff !important; }
 
-[data-testid="stSidebar"] * {
-    color: #f5f0e8 !important;
-}
-
-[data-testid="stSidebar"] .stSlider label {
-    color: #aaa !important;
+/* Scanline overlay effect */
+[data-testid="stAppViewContainer"]::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(157, 78, 221, 0.015) 2px,
+        rgba(157, 78, 221, 0.015) 4px
+    );
+    pointer-events: none;
+    z-index: 0;
 }
 
 /* Header */
-.header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 2rem 0 1.5rem;
-    border-bottom: 2px solid #1a1a1a;
-    margin-bottom: 2rem;
+.cyber-header {
+    padding: 1.5rem 0 1rem;
+    border-bottom: 1px solid #9d4edd44;
+    margin-bottom: 1.5rem;
+    position: relative;
 }
-.header-left { display: flex; align-items: baseline; gap: 1rem; }
-.logo {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 2.2rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    letter-spacing: -0.03em;
+.cyber-header::after {
+    content: '';
+    position: absolute;
+    bottom: -2px; left: 0;
+    width: 200px; height: 2px;
+    background: linear-gradient(90deg, #c77dff, transparent);
 }
-.logo span { color: #e85d04; }
-.tagline {
-    font-size: 0.8rem;
-    color: #888;
-    font-weight: 400;
-    letter-spacing: 0.1em;
+.cyber-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #c77dff;
+    letter-spacing: 0.08em;
+    text-shadow: 0 0 20px #9d4edd88, 0 0 40px #9d4edd44;
+    line-height: 1;
+}
+.cyber-title span { color: #e040fb; }
+.cyber-sub {
+    font-size: 0.72rem;
+    color: #9d4edd;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
+    margin-top: 0.3rem;
 }
-.status-pill {
-    background: #1a1a1a;
-    color: #4ade80;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
-    padding: 0.4rem 1rem;
-    border-radius: 2rem;
-    display: flex;
+.cyber-status {
+    display: inline-flex;
     align-items: center;
     gap: 0.4rem;
+    background: rgba(157,78,221,0.1);
+    border: 1px solid #9d4edd55;
+    color: #c77dff;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    padding: 0.3rem 0.8rem;
+    border-radius: 2px;
+    letter-spacing: 0.15em;
+    float: right;
+    margin-top: 0.5rem;
 }
-.dot { width: 6px; height: 6px; background: #4ade80; border-radius: 50%; animation: pulse 1.5s infinite; }
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+.blink { animation: blink 1s infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
 
-/* Metric cards */
-.metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1rem;
-    margin-bottom: 2rem;
-}
-.metric-card {
-    background: white;
-    border: 1.5px solid #e0d9ce;
-    border-radius: 12px;
-    padding: 1.2rem 1.4rem;
+/* Panel cards */
+.cyber-card {
+    background: rgba(157,78,221,0.06);
+    border: 1px solid #9d4edd33;
+    border-radius: 4px;
+    padding: 1.2rem;
+    margin-bottom: 1rem;
     position: relative;
     overflow: hidden;
 }
-.metric-card::before {
+.cyber-card::before {
     content: '';
     position: absolute;
-    top: 0; left: 0; right: 0;
-    height: 3px;
-    background: var(--accent, #e85d04);
+    top: 0; left: 0;
+    width: 3px; height: 100%;
+    background: linear-gradient(180deg, #c77dff, #e040fb);
 }
-.metric-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
+.cyber-card-title {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    color: #9d4edd;
+    letter-spacing: 0.2em;
     text-transform: uppercase;
-    color: #888;
-    margin-bottom: 0.5rem;
-}
-.metric-value {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 2rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    line-height: 1;
-}
-.metric-sub {
-    font-size: 0.72rem;
-    color: #aaa;
-    margin-top: 0.3rem;
+    margin-bottom: 0.8rem;
 }
 
-/* Section title */
-.section-title {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    color: #888;
-    margin-bottom: 1rem;
+/* Metric row */
+.metric-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid #9d4edd22;
+}
+.metric-row:last-child { border-bottom: none; }
+.metric-name {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #c77dff;
     display: flex;
     align-items: center;
     gap: 0.5rem;
 }
-.section-title::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: #e0d9ce;
-}
-
-/* Detection result cards */
-.detection-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.8rem;
-    margin-top: 1rem;
-}
-.det-card {
-    background: white;
-    border: 1.5px solid #e0d9ce;
-    border-radius: 10px;
-    padding: 1rem 1.2rem;
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-}
-.det-emoji { font-size: 1.8rem; }
-.det-info { flex: 1; }
-.det-name {
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: #1a1a1a;
-    text-transform: capitalize;
-}
-.det-count {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.75rem;
-    color: #888;
-}
-.det-bar-bg {
-    height: 4px;
-    background: #f0ebe3;
+.metric-bar-wrap { flex: 1; margin: 0 1rem; }
+.metric-bar-bg {
+    height: 3px;
+    background: rgba(157,78,221,0.15);
     border-radius: 2px;
-    margin-top: 0.5rem;
     overflow: hidden;
 }
-.det-bar {
+.metric-bar-fill {
     height: 100%;
     border-radius: 2px;
-    background: #e85d04;
-    transition: width 0.5s ease;
+    background: linear-gradient(90deg, #9d4edd, #e040fb);
+    box-shadow: 0 0 8px #c77dff88;
 }
-
-/* Model metrics table */
-.metrics-table {
-    background: white;
-    border: 1.5px solid #e0d9ce;
-    border-radius: 12px;
-    overflow: hidden;
-    margin-top: 1rem;
-}
-.metrics-table-row {
-    display: flex;
-    align-items: center;
-    padding: 0.8rem 1.2rem;
-    border-bottom: 1px solid #f0ebe3;
-    gap: 1rem;
-}
-.metrics-table-row:last-child { border-bottom: none; }
-.mt-emoji { font-size: 1.2rem; width: 2rem; }
-.mt-class { font-weight: 500; font-size: 0.88rem; flex: 1; text-transform: capitalize; }
-.mt-bar-wrap { flex: 2; }
-.mt-bar-bg { height: 6px; background: #f0ebe3; border-radius: 3px; overflow: hidden; }
-.mt-bar { height: 100%; border-radius: 3px; }
-.mt-pct {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #1a1a1a;
-    width: 3rem;
+.metric-pct {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    color: #e040fb;
+    min-width: 2.5rem;
     text-align: right;
 }
 
-/* Upload area */
-.upload-area {
-    background: white;
-    border: 2px dashed #c0b8ae;
-    border-radius: 16px;
-    padding: 3rem 2rem;
+/* Detection items */
+.det-item {
+    background: rgba(157,78,221,0.08);
+    border: 1px solid #9d4edd33;
+    border-left: 3px solid #e040fb;
+    border-radius: 2px;
+    padding: 0.8rem 1rem;
+    margin-bottom: 0.6rem;
+}
+.det-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.4rem;
+}
+.det-name {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    color: #c77dff;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+.det-count {
+    background: rgba(224,64,251,0.15);
+    border: 1px solid #e040fb44;
+    color: #e040fb;
+    font-family: 'Orbitron', monospace;
+    font-size: 0.6rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 2px;
+}
+.det-conf-bar-bg {
+    height: 2px;
+    background: rgba(157,78,221,0.15);
+    border-radius: 1px;
+    overflow: hidden;
+}
+.det-conf-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #9d4edd, #e040fb);
+    box-shadow: 0 0 6px #c77dff;
+}
+.det-conf-text {
+    font-size: 0.75rem;
+    color: #9d4edd;
+    margin-top: 0.3rem;
+}
+
+/* Stats */
+.stat-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.stat-item {
+    background: rgba(157,78,221,0.08);
+    border: 1px solid #9d4edd33;
+    border-radius: 4px;
+    padding: 0.8rem;
     text-align: center;
-    transition: border-color 0.2s;
+}
+.stat-val {
+    font-family: 'Orbitron', monospace;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #e040fb;
+    text-shadow: 0 0 15px #e040fb88;
+    line-height: 1;
+}
+.stat-lbl {
+    font-size: 0.62rem;
+    color: #9d4edd;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    margin-top: 0.2rem;
 }
 
 /* Empty state */
-.empty-state {
-    background: white;
-    border: 1.5px solid #e0d9ce;
-    border-radius: 16px;
-    padding: 4rem 2rem;
+.empty-cyber {
+    border: 1px dashed #9d4edd44;
+    border-radius: 4px;
+    padding: 3rem 1rem;
     text-align: center;
-    color: #bbb;
+    color: #9d4edd55;
 }
-.empty-icon { font-size: 3rem; margin-bottom: 1rem; }
-.empty-text { font-size: 1rem; color: #ccc; }
-
-/* Sidebar */
-.sidebar-section {
-    margin-bottom: 2rem;
-}
-.sidebar-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    letter-spacing: 0.12em;
-    text-transform: uppercase;
-    color: #666 !important;
+.empty-icon {
+    font-size: 2.5rem;
     margin-bottom: 0.8rem;
+    filter: grayscale(0.5);
+}
+.empty-txt {
+    font-family: 'Orbitron', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: #9d4edd55;
 }
 
 /* Buttons */
 .stButton > button {
-    background: #1a1a1a !important;
-    color: #f5f0e8 !important;
-    font-family: 'Space Grotesk', sans-serif !important;
-    font-weight: 600 !important;
-    font-size: 0.9rem !important;
-    border: none !important;
-    border-radius: 10px !important;
+    background: linear-gradient(135deg, #7b2fbe, #9d4edd) !important;
+    color: #fff !important;
+    font-family: 'Orbitron', monospace !important;
+    font-weight: 700 !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.12em !important;
+    border: 1px solid #c77dff44 !important;
+    border-radius: 2px !important;
     padding: 0.7rem 1.5rem !important;
     width: 100% !important;
-    letter-spacing: 0.02em !important;
-    transition: background 0.2s !important;
+    text-transform: uppercase !important;
+    transition: all 0.2s !important;
+    box-shadow: 0 0 15px #9d4edd44 !important;
 }
-.stButton > button:hover { background: #333 !important; }
-
-/* Camera toggle button */
-.cam-btn > button {
-    background: #e85d04 !important;
-    color: white !important;
-}
-.cam-btn-off > button {
-    background: #555 !important;
+.stButton > button:hover {
+    background: linear-gradient(135deg, #9d4edd, #c77dff) !important;
+    box-shadow: 0 0 25px #9d4edd88 !important;
 }
 
 /* Tabs */
 .stTabs [data-baseweb="tab-list"] {
-    background: #ede8e0 !important;
-    border-radius: 10px !important;
-    padding: 4px !important;
-    gap: 4px !important;
-    border: none !important;
+    background: rgba(157,78,221,0.08) !important;
+    border: 1px solid #9d4edd33 !important;
+    border-radius: 2px !important;
+    padding: 3px !important;
+    gap: 3px !important;
 }
 .stTabs [data-baseweb="tab"] {
     background: transparent !important;
-    color: #888 !important;
-    font-family: 'Space Grotesk', sans-serif !important;
-    font-weight: 500 !important;
-    border-radius: 8px !important;
-    font-size: 0.88rem !important;
+    color: #9d4edd !important;
+    font-family: 'Orbitron', monospace !important;
+    font-size: 0.6rem !important;
+    letter-spacing: 0.1em !important;
+    border-radius: 2px !important;
 }
 .stTabs [aria-selected="true"] {
-    background: white !important;
-    color: #1a1a1a !important;
-    font-weight: 600 !important;
-    box-shadow: 0 1px 4px rgba(0,0,0,0.08) !important;
+    background: rgba(157,78,221,0.2) !important;
+    color: #c77dff !important;
+    box-shadow: 0 0 10px #9d4edd44 !important;
 }
 
 /* Slider */
-.stSlider [data-baseweb="slider"] div { background: #e85d04 !important; }
+[data-testid="stSlider"] [role="slider"] { background: #c77dff !important; }
 
-/* Hide Streamlit default */
+/* File uploader */
+[data-testid="stFileUploader"] {
+    background: rgba(157,78,221,0.05) !important;
+    border: 1px dashed #9d4edd44 !important;
+    border-radius: 4px !important;
+}
+
 #MainMenu, footer, header { visibility: hidden; }
-[data-testid="stDecoration"] { display: none; }
 </style>
 """, unsafe_allow_html=True)
 
-# ── Cargar modelo ─────────────────────────────────────────────────────────────
+# ── Modelo ────────────────────────────────────────────────────────────────────
 @st.cache_resource
 def cargar_modelo():
     return YOLO("best.pt")
@@ -316,86 +327,151 @@ def cargar_modelo():
 model = cargar_modelo()
 clases = model.names
 
-# Métricas del modelo entrenado (según resultados del entrenamiento)
 metricas_modelo = {
-    "helmet":   {"map50": 0.900, "color": "#e85d04"},
-    "vest":     {"map50": 0.909, "color": "#16a34a"},
-    "boots":    {"map50": 0.859, "color": "#2563eb"},
-    "person":   {"map50": 0.853, "color": "#7c3aed"},
-    "glasses":  {"map50": 0.728, "color": "#db2777"},
-    "earmuffs": {"map50": 0.612, "color": "#d97706"},
-    "gloves":   {"map50": 0.384, "color": "#64748b"},
-}
-
-emoji_map = {
-    "helmet": "⛑️", "vest": "🦺", "boots": "👟",
-    "gloves": "🧤", "glasses": "🥽", "earmuffs": "🎧", "person": "🧍"
+    "helmet":   {"map50": 0.900, "emoji": "⛑️"},
+    "vest":     {"map50": 0.909, "emoji": "🦺"},
+    "boots":    {"map50": 0.859, "emoji": "👟"},
+    "person":   {"map50": 0.853, "emoji": "🧍"},
+    "glasses":  {"map50": 0.728, "emoji": "🥽"},
+    "earmuffs": {"map50": 0.612, "emoji": "🎧"},
+    "gloves":   {"map50": 0.384, "emoji": "🧤"},
 }
 
 # ── Sidebar ───────────────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("""
-    <div style="padding: 1.5rem 0 1rem;">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700;color:#f5f0e8;letter-spacing:-0.02em;">
-            Safe<span style="color:#e85d04">Eye</span>
+    <div style="padding:1rem 0 0.5rem;">
+        <div style="font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;
+        color:#c77dff;letter-spacing:0.1em;text-shadow:0 0 15px #9d4edd88;">
+            SAFE<span style="color:#e040fb">EYE</span>
         </div>
-        <div style="font-size:0.7rem;color:#555;text-transform:uppercase;letter-spacing:0.1em;margin-top:0.3rem;">
-            Panel de control
+        <div style="font-size:0.6rem;color:#9d4edd;letter-spacing:0.2em;
+        text-transform:uppercase;margin-top:0.2rem;">
+            PPE SCANNER v2.0
         </div>
     </div>
-    <hr style="border:none;border-top:1px solid #333;margin-bottom:1.5rem;">
+    <hr style="border:none;border-top:1px solid #9d4edd33;margin:1rem 0;">
     """, unsafe_allow_html=True)
 
-    st.markdown('<p class="sidebar-label">🎯 Sensibilidad de detección</p>', unsafe_allow_html=True)
-    confianza = st.slider("", min_value=0.10, max_value=0.95, value=0.25, step=0.05, label_visibility="collapsed")
-
-    st.markdown('<hr style="border:none;border-top:1px solid #333;margin:1.5rem 0;">', unsafe_allow_html=True)
-
-    st.markdown('<p class="sidebar-label">📊 Rendimiento del modelo</p>', unsafe_allow_html=True)
-    st.markdown(f"""
-    <div style="background:#111;border-radius:10px;padding:1rem;margin-top:0.5rem;">
-        <div style="font-family:'JetBrains Mono',monospace;font-size:1.6rem;font-weight:700;color:#4ade80;">74.9%</div>
-        <div style="font-size:0.7rem;color:#555;text-transform:uppercase;letter-spacing:0.1em;margin-top:0.2rem;">mAP50 global</div>
-        <div style="margin-top:1rem;font-size:0.7rem;color:#555;">50 épocas · YOLOv8n · GPU T4</div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    st.markdown('<hr style="border:none;border-top:1px solid #333;margin:1.5rem 0;">', unsafe_allow_html=True)
-    st.markdown('<p class="sidebar-label">ℹ️ Acerca de</p>', unsafe_allow_html=True)
     st.markdown("""
-    <div style="font-size:0.78rem;color:#555;line-height:1.7;">
-        Modelo entrenado con dataset PPE Factory de Roboflow.<br>
-        Detecta 7 clases de equipos de protección personal.
+    <div style="font-family:'Orbitron',monospace;font-size:0.58rem;color:#9d4edd;
+    letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.5rem;">
+        ⬡ Sensibilidad
+    </div>
+    """, unsafe_allow_html=True)
+    confianza = st.slider("", 0.10, 0.95, 0.25, 0.05, label_visibility="collapsed")
+
+    st.markdown('<hr style="border:none;border-top:1px solid #9d4edd33;margin:1rem 0;">', unsafe_allow_html=True)
+
+    # Métricas del modelo
+    st.markdown("""
+    <div style="font-family:'Orbitron',monospace;font-size:0.58rem;color:#9d4edd;
+    letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.8rem;">
+        ⬡ Rendimiento del modelo
+    </div>
+    <div style="background:rgba(157,78,221,0.08);border:1px solid #9d4edd33;
+    border-radius:4px;padding:1rem;margin-bottom:1rem;text-align:center;">
+        <div style="font-family:'Orbitron',monospace;font-size:2rem;font-weight:900;
+        color:#e040fb;text-shadow:0 0 20px #e040fb88;">74.9%</div>
+        <div style="font-size:0.6rem;color:#9d4edd;letter-spacing:0.15em;
+        text-transform:uppercase;margin-top:0.3rem;">mAP50 Global</div>
+        <div style="font-size:0.65rem;color:#9d4edd66;margin-top:0.5rem;">
+            50 épocas · YOLOv8n · GPU T4
+        </div>
     </div>
     """, unsafe_allow_html=True)
 
-# ── Header ────────────────────────────────────────────────────────────────────
+    for clase, data in metricas_modelo.items():
+        pct = data["map50"]
+        bar_w = int(pct * 100)
+        st.markdown(f"""
+        <div class="metric-row">
+            <div class="metric-name">{data['emoji']} {clase}</div>
+            <div class="metric-bar-wrap">
+                <div class="metric-bar-bg">
+                    <div class="metric-bar-fill" style="width:{bar_w}%"></div>
+                </div>
+            </div>
+            <div class="metric-pct">{int(pct*100)}%</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    st.markdown('<hr style="border:none;border-top:1px solid #9d4edd33;margin:1rem 0;">', unsafe_allow_html=True)
+
+    # Resultados de detección en sidebar
+    st.markdown("""
+    <div style="font-family:'Orbitron',monospace;font-size:0.58rem;color:#9d4edd;
+    letter-spacing:0.15em;text-transform:uppercase;margin-bottom:0.8rem;">
+        ⬡ Detecciones
+    </div>
+    """, unsafe_allow_html=True)
+
+    if "resultado_deteccion" not in st.session_state:
+        st.markdown("""
+        <div class="empty-cyber" style="padding:1.5rem;">
+            <div class="empty-txt">Sin datos aún</div>
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        conteo = st.session_state["resultado_deteccion"]
+        n_total = sum(v["count"] for v in conteo.values())
+        n_clases = len(conteo)
+        conf_avg = st.session_state.get("conf_avg", 0)
+
+        st.markdown(f"""
+        <div class="stat-grid">
+            <div class="stat-item">
+                <div class="stat-val">{n_total}</div>
+                <div class="stat-lbl">Total</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val">{n_clases}</div>
+                <div class="stat-lbl">Clases</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val">{int(conf_avg*100)}%</div>
+                <div class="stat-lbl">Conf.</div>
+            </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        for clase, info in conteo.items():
+            promedio = sum(info["confs"]) / len(info["confs"])
+            emoji = metricas_modelo.get(clase, {}).get("emoji", "📦")
+            bar_w = int(promedio * 100)
+            st.markdown(f"""
+            <div class="det-item">
+                <div class="det-header">
+                    <div class="det-name">{emoji} {clase}</div>
+                    <div class="det-count">×{info['count']}</div>
+                </div>
+                <div class="det-conf-bar-bg">
+                    <div class="det-conf-bar" style="width:{bar_w}%"></div>
+                </div>
+                <div class="det-conf-text">Confianza: {int(promedio*100)}%</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+# ── Header principal ──────────────────────────────────────────────────────────
 st.markdown("""
-<div class="header">
-    <div class="header-left">
-        <div class="logo">Safe<span>Eye</span></div>
-        <div class="tagline">Detector de Equipos de Protección Personal</div>
-    </div>
-    <div class="status-pill">
-        <div class="dot"></div>
-        MODELO ACTIVO
-    </div>
+<div class="cyber-header">
+    <span class="cyber-status"><span class="blink">▮</span> SISTEMA ACTIVO</span>
+    <div class="cyber-title">SAFE<span>EYE</span></div>
+    <div class="cyber-sub">// Detector de Equipos de Protección Personal · YOLOv8 Neural Network</div>
 </div>
 """, unsafe_allow_html=True)
 
-# ── Layout principal ──────────────────────────────────────────────────────────
-col_izq, col_der = st.columns([1.1, 1], gap="large")
+# ── Layout ────────────────────────────────────────────────────────────────────
+col_izq, col_der = st.columns([1, 1.2], gap="large")
 
 with col_izq:
-    # Tabs entrada
-    tab1, tab2 = st.tabs(["📁  Subir imagen", "📷  Cámara"])
+    tab1, tab2 = st.tabs(["📁  ARCHIVO", "📷  CÁMARA"])
 
     imagen_input = None
-    camara_activa = st.session_state.get("camara_activa", False)
 
     with tab1:
         archivo = st.file_uploader(
-            "Sube una imagen JPG, JPEG o PNG",
+            "Selecciona imagen",
             type=["jpg", "jpeg", "png"],
             label_visibility="visible"
         )
@@ -403,164 +479,91 @@ with col_izq:
             imagen_input = Image.open(archivo).convert("RGB")
 
     with tab2:
-        # Toggle cámara
-        col_btn1, col_btn2 = st.columns(2)
-        with col_btn1:
-            if st.button("📷 Activar cámara"):
-                st.session_state["camara_activa"] = True
-        with col_btn2:
-            if st.button("⏹ Desactivar cámara"):
-                st.session_state["camara_activa"] = False
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("▶ ACTIVAR"):
+                st.session_state["cam_on"] = True
+        with c2:
+            if st.button("■ DETENER"):
+                st.session_state["cam_on"] = False
 
-        if st.session_state.get("camara_activa", False):
+        if st.session_state.get("cam_on", False):
             foto = st.camera_input("", label_visibility="collapsed")
             if foto:
                 imagen_input = Image.open(foto).convert("RGB")
         else:
             st.markdown("""
-            <div style="background:#f0ebe3;border-radius:12px;padding:2rem;text-align:center;color:#aaa;margin-top:1rem;">
-                <div style="font-size:2rem">📷</div>
-                <div style="margin-top:0.5rem;font-size:0.9rem;">Cámara desactivada</div>
-                <div style="font-size:0.75rem;margin-top:0.3rem;">Presiona "Activar cámara" para comenzar</div>
+            <div class="empty-cyber" style="margin-top:0.8rem;">
+                <div class="empty-icon">📷</div>
+                <div class="empty-txt">Cámara offline</div>
             </div>
             """, unsafe_allow_html=True)
 
     if imagen_input:
         st.markdown('<br>', unsafe_allow_html=True)
-        st.markdown('<div class="section-title">Vista previa</div>', unsafe_allow_html=True)
         st.image(imagen_input, use_container_width=True)
         st.markdown('<br>', unsafe_allow_html=True)
-        analizar = st.button("🔍  Analizar imagen")
-    else:
-        analizar = False
+        if st.button("⬡ INICIAR ESCANEO"):
+            with st.spinner("Procesando señal..."):
+                img_array = np.array(imagen_input)
+                resultados = model.predict(source=img_array, conf=confianza, verbose=False)
+                img_resultado = resultados[0].plot()
+                img_rgb = cv2.cvtColor(img_resultado, cv2.COLOR_BGR2RGB)
 
-    # ── Métricas del modelo ──────────────────────────────────────────────
-    st.markdown('<br>', unsafe_allow_html=True)
-    st.markdown('<div class="section-title">Métricas por clase (mAP50)</div>', unsafe_allow_html=True)
+                boxes = resultados[0].boxes
+                conteo = {}
+                for box in boxes:
+                    clase_id = int(box.cls[0])
+                    nombre = clases[clase_id]
+                    conf_val = float(box.conf[0])
+                    if nombre not in conteo:
+                        conteo[nombre] = {"count": 0, "confs": []}
+                    conteo[nombre]["count"] += 1
+                    conteo[nombre]["confs"].append(conf_val)
 
-    rows_html = ""
-    for clase, data in metricas_modelo.items():
-        pct = data["map50"]
-        color = data["color"]
-        emoji = emoji_map.get(clase, "📦")
-        bar_w = int(pct * 100)
-        rows_html += f"""
-        <div class="metrics-table-row">
-            <div class="mt-emoji">{emoji}</div>
-            <div class="mt-class">{clase}</div>
-            <div class="mt-bar-wrap">
-                <div class="mt-bar-bg">
-                    <div class="mt-bar" style="width:{bar_w}%;background:{color};"></div>
-                </div>
-            </div>
-            <div class="mt-pct">{int(pct*100)}%</div>
-        </div>
-        """
-    st.markdown(f'<div class="metrics-table">{rows_html}</div>', unsafe_allow_html=True)
+                n = len(boxes)
+                conf_avg = sum([b.conf[0].item() for b in boxes]) / n if n > 0 else 0
+
+                st.session_state["img_resultado"] = img_rgb
+                st.session_state["resultado_deteccion"] = conteo
+                st.session_state["conf_avg"] = conf_avg
+            st.rerun()
 
 with col_der:
-    if imagen_input is None:
+    st.markdown("""
+    <div style="font-family:'Orbitron',monospace;font-size:0.58rem;color:#9d4edd;
+    letter-spacing:0.2em;text-transform:uppercase;margin-bottom:1rem;
+    border-bottom:1px solid #9d4edd33;padding-bottom:0.5rem;">
+        ⬡ Output visual
+    </div>
+    """, unsafe_allow_html=True)
+
+    if "img_resultado" in st.session_state:
+        st.image(st.session_state["img_resultado"], use_container_width=True)
+        if st.session_state.get("resultado_deteccion"):
+            n = sum(v["count"] for v in st.session_state["resultado_deteccion"].values())
+            if n == 0:
+                st.warning("Sin detecciones en este frame.")
+            else:
+                st.success(f"✓ {n} objeto(s) detectado(s) — revisa el panel lateral")
+    else:
         st.markdown("""
-        <div class="empty-state">
-            <div class="empty-icon">👁</div>
-            <div style="font-size:1rem;color:#bbb;font-weight:500;">Sin imagen activa</div>
-            <div style="font-size:0.82rem;color:#ccc;margin-top:0.5rem;">
-                Sube una imagen o activa la cámara para comenzar
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
-
-    elif analizar:
-        with st.spinner("Procesando..."):
-            img_array = np.array(imagen_input)
-            resultados = model.predict(source=img_array, conf=confianza, verbose=False)
-            img_resultado = resultados[0].plot()
-            img_rgb = cv2.cvtColor(img_resultado, cv2.COLOR_BGR2RGB)
-
-        st.markdown('<div class="section-title">Resultado de detección</div>', unsafe_allow_html=True)
-        st.image(img_rgb, use_container_width=True)
-
-        boxes = resultados[0].boxes
-        n = len(boxes)
-
-        st.markdown('<br>', unsafe_allow_html=True)
-
-        if n == 0:
-            st.warning("⚠️ No se detectó ningún equipo de protección en la imagen.")
-        else:
-            # Conteo
-            conteo = {}
-            for box in boxes:
-                clase_id = int(box.cls[0])
-                nombre = clases[clase_id]
-                conf_val = float(box.conf[0])
-                if nombre not in conteo:
-                    conteo[nombre] = {"count": 0, "confs": []}
-                conteo[nombre]["count"] += 1
-                conteo[nombre]["confs"].append(conf_val)
-
-            conf_media = sum([b.conf[0].item() for b in boxes]) / n
-
-            # Stats superiores
-            st.markdown(f"""
-            <div class="metrics-grid" style="grid-template-columns:repeat(3,1fr);">
-                <div class="metric-card" style="--accent:#e85d04">
-                    <div class="metric-label">Total objetos</div>
-                    <div class="metric-value">{n}</div>
-                    <div class="metric-sub">detectados</div>
-                </div>
-                <div class="metric-card" style="--accent:#16a34a">
-                    <div class="metric-label">Clases únicas</div>
-                    <div class="metric-value">{len(conteo)}</div>
-                    <div class="metric-sub">de 7 posibles</div>
-                </div>
-                <div class="metric-card" style="--accent:#2563eb">
-                    <div class="metric-label">Confianza media</div>
-                    <div class="metric-value">{int(conf_media*100)}%</div>
-                    <div class="metric-sub">promedio</div>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
-
-            # Detecciones por clase
-            st.markdown('<div class="section-title">Objetos detectados</div>', unsafe_allow_html=True)
-
-            det_html = '<div class="detection-grid">'
-            for clase, info in conteo.items():
-                promedio = sum(info["confs"]) / len(info["confs"])
-                emoji = emoji_map.get(clase, "📦")
-                bar_w = int(promedio * 100)
-                color = metricas_modelo.get(clase, {}).get("color", "#e85d04")
-                det_html += f"""
-                <div class="det-card">
-                    <div class="det-emoji">{emoji}</div>
-                    <div class="det-info">
-                        <div class="det-name">{clase}</div>
-                        <div class="det-count">{info['count']} objeto(s) · {int(promedio*100)}% conf.</div>
-                        <div class="det-bar-bg">
-                            <div class="det-bar" style="width:{bar_w}%;background:{color};"></div>
-                        </div>
-                    </div>
-                </div>
-                """
-            det_html += "</div>"
-            st.markdown(det_html, unsafe_allow_html=True)
-
-    elif imagen_input:
-        st.markdown("""
-        <div class="empty-state">
-            <div class="empty-icon">🔍</div>
-            <div style="font-size:1rem;color:#bbb;font-weight:500;">Listo para analizar</div>
-            <div style="font-size:0.82rem;color:#ccc;margin-top:0.5rem;">
-                Presiona "Analizar imagen" para detectar
+        <div class="empty-cyber" style="height:400px;display:flex;flex-direction:column;
+        align-items:center;justify-content:center;">
+            <div class="empty-icon">⬡</div>
+            <div class="empty-txt">Esperando señal de entrada...</div>
+            <div style="font-size:0.65rem;color:#9d4edd33;margin-top:0.5rem;
+            font-family:'Orbitron',monospace;letter-spacing:0.1em;">
+                CARGA UNA IMAGEN O ACTIVA LA CÁMARA
             </div>
         </div>
         """, unsafe_allow_html=True)
 
 # ── Footer ────────────────────────────────────────────────────────────────────
 st.markdown("""
-<div style="text-align:center;color:#ccc;font-size:0.75rem;padding:2rem 0 1rem;
-border-top:1px solid #e0d9ce;margin-top:3rem;font-family:'JetBrains Mono',monospace;">
-    SafeEye · YOLOv8 · mAP50 74.9% · UNAB Digital · IA Avanzada
+<div style="text-align:center;color:#9d4edd33;font-size:0.65rem;padding:2rem 0 1rem;
+border-top:1px solid #9d4edd22;margin-top:3rem;font-family:'Orbitron',monospace;
+letter-spacing:0.15em;">
+    SAFEEYE · YOLOV8 · MAP50 74.9% · UNAB DIGITAL · IA AVANZADA
 </div>
 """, unsafe_allow_html=True)
